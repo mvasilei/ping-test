@@ -45,13 +45,13 @@ def main():
              stderr=subprocess.STDOUT)
              stdout, stderr = response.communicate()
 
-             progress(i, 10, response.returncode, line)
+             progress(i, 15, response.returncode, line)
              print
 
         time.sleep(1)
         clear()
         i = i + 1
-        if i == 10:
+        if i == 15:
             i = 1
 
         sys.stdout.flush()
