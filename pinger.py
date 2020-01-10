@@ -10,14 +10,12 @@ def progress(count, total, response,line):
     # Draw progress bar if host not reachable print . else !
     bar_len = 15
 
-    filled_len = int(round(bar_len * count / float(total)))
-
     if (response == 0):
         status = line.rstrip() + " is Reachable "
-        bar = '!' * filled_len + '-' * (bar_len - filled_len)
+        bar = '!' * count + '-' * (bar_len - count)
     else:
         status = line.rstrip() + " is Not reachable "
-        bar = '.' * filled_len + '-' * (bar_len - filled_len)
+        bar = '.' * count + '-' * (bar_len - count)
 
     sys.stdout.write('[%s] ...%s\r' % (bar, status))
 
