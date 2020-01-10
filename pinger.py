@@ -11,8 +11,6 @@ def progress(count, total, response,line):
 
     filled_len = int(round(bar_len * count / float(total)))
 
-    percents = round(100.0 * count / float(total), 1)
-
     if (response == 0):
         status = line.rstrip() + " is Reachable "
         bar = '!' * filled_len + '-' * (bar_len - filled_len)
