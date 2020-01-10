@@ -7,6 +7,7 @@ def signal_handler(sig, frame):
     sys.exit(0)
 
 def progress(count, total, response,line):
+    # Draw progress bar if host not reachable print . else !
     bar_len = 15
 
     filled_len = int(round(bar_len * count / float(total)))
@@ -37,23 +38,24 @@ def main():
     i = 1
 
     while True:
+        #for each host in the hosts file send ping and surpress os output
         for line in lines:
              response=subprocess.Popen(["ping", "-c", "1", line.strip()],
              stdout=subprocess.PIPE,
              stderr=subprocess.STDOUT)
              stdout, stderr = response.communicate()
 
-             progress(i, 15, response.returncode, line)
+             progress(i, 10, response.returncode, line)
              print
 
         time.sleep(1)
         clear()
         i = i + 1
-        if i == 15:
+        if i == 10:
             i = 1
 
         sys.stdout.flush()
 
 if __name__ == '__main__':
-    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGINT, signal_handler) # catch ctrl-c and call handler to terminate the script
     main()
