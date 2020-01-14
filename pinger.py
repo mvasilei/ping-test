@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 import subprocess,sys,time,os,signal
-
+from datetime import datetime
 
 def signal_handler(sig, frame):
     print('Exiting gracefully Ctrl-C detected...')
@@ -28,17 +28,17 @@ def main():
         with open("hosts", "r") as f:
             lines = f.readlines()
     except IOError:
-        print
-        "Could not read file hosts"
+        print "Could not read file hosts"
 
     clear()
 
     i = 1
 
     while True:
+        print 5 * '=' + datetime.now().strftime(' %Y-%m-%d %H:%M:%S ') + 5 * '='
         #for each host in the hosts file send ping and surpress os output
         for line in lines:
-             response=subprocess.Popen(["ping", "-c", "1", line.strip()],
+             response=subprocess.Popen(["ping", line.strip(), "1"] if os.name =='posix' else ["ping", line.strip(), "-w 1"],
              stdout=subprocess.PIPE,
              stderr=subprocess.STDOUT)
              stdout, stderr = response.communicate()
