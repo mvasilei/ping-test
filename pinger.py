@@ -1,59 +1,53 @@
 #! /usr/bin/env python
-import subprocess,sys,time,os,signal
-from datetime import datetime
+from datetime import datetime, timedelta
+import subprocess, re, signal
 
 def signal_handler(sig, frame):
     print('Exiting gracefully Ctrl-C detected...')
     sys.exit(0)
 
-def progress(count, total, response,line):
-    # Draw progress bar if host not reachable print . else !
-    bar_len = 15
-
-    if (response == 0):
-        status = line.rstrip() + " is Reachable "
-        bar = '!' * count + '-' * (bar_len - count)
-    else:
-        status = line.rstrip() + " is Not reachable "
-        bar = '.' * count + '-' * (bar_len - count)
-
-    sys.stdout.write('[%s] ...%s\r' % (bar, status))
-
-def clear():
-    # check and make call for specific operating system
-    _ = subprocess.call('clear' if os.name =='posix' else 'cls')
-
 def main():
     try:
-        with open("hosts", "r") as f:
+        with open('/etc/hosts', 'r') as f:
             lines = f.readlines()
     except IOError:
-        print "Could not read file hosts"
+        print 'Could not read file hosts'
 
-    clear()
+    pattern = re.compile(r'^(?P<module>LC\/0\/[0-9]\/CPU0).*(?P<error>LICENSE)', re.MULTILINE)
+    pe = re.compile(r'ukx[a-z]{2}[1-9][ap][be][0-1][1-9]')
+    igw = re.compile(r'[a-z]{4}[0-9]{2}-igw-a1')
 
-    i = 1
+    yesterday = datetime.strftime(datetime.now() - timedelta(1), ' %b %d ')
+    flag = 0
 
-    while True:
-        print 5 * '=' + datetime.now().strftime(' %Y-%m-%d %H:%M:%S ') + 5 * '='
-        #for each host in the hosts file send ping and surpress os output
-        for line in lines:
-             response=subprocess.Popen(["ping", line.strip(), "1"] if os.name =='posix' else ["ping", line.strip(), "-w 1"],
-             stdout=subprocess.PIPE,
-             stderr=subprocess.STDOUT)
-             stdout, stderr = response.communicate()
+    for host in lines:
+        if (re.findall(pe, host.lower()) or re.findall(igw, host.lower())):
+            ip, name = host.split()
 
-             progress(i, 15, response.returncode, line)
-             print
+            response = subprocess.Popen(['rcomauto ' + name.strip() + ' "show log start' + yesterday + ' 00:00:00 | include LICENSE"'],
+                                        stdout=subprocess.PIPE,
+                                        shell=True)
 
-        time.sleep(1)
-        clear()
-        i = i + 1
-        if i == 15:
-            i = 1
+            print name
+            if response.returncode == None :
+                #m = pattern.findall(response.communicate()[0].strip('\n'))
 
-        sys.stdout.flush()
+                for m in pattern.finditer(response.communicate()[0].strip('\n')):
+                    if flag == 0:
+                        with open('swap','w') as f:
+                            f.write('Host:' + name + ' Module: ' + m.group('module') + ' needs Licensing\n')
+                    else:
+                        with open('swap','a') as f:
+                            f.write('Host:' + name + ' Module: ' + m.group('module') + ' needs Licensing\n')
 
+                    flag = 1
+            else:
+                print 'An error occurred'
+
+    if flag == 1:
+            response = subprocess.Popen(['mailx -s "Unlicensed ASR9K Nodes" IPMobileCore@vodafone.com < swap'],
+                                        stdout=subprocess.PIPE,
+                                        shell=True)
 if __name__ == '__main__':
-    signal.signal(signal.SIGINT, signal_handler) # catch ctrl-c and call handler to terminate the script
+    signal.signal(signal.SIGINT, signal_handler)  # catch ctrl-c and call handler to terminate the script
     main()
